@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Absensi 8 Digital</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--tx:#1a2233;--mu:#6b7690;--pr:#2f6bff;--ok:#16a34a;--iz:#d97706;--al:#dc2626;--bd:#e3e8f2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1420;--card:#182033;--tx:#eef1f8;--mu:#94a0ba;--bd:#26304a}}
+:root[data-theme="dark"]{--bg:#0f1420;--card:#182033;--tx:#eef1f8;--mu:#94a0ba;--bd:#26304a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:480px;margin:0 auto;padding:12px 14px 40px}
+h1{font-size:19px;margin:4px 0 8px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-bottom:8px;z-index:5}
+.in{display:flex;gap:8px}
+input{width:100%;padding:13px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);font-size:17px}
+button{border:none;border-radius:12px;padding:0 18px;background:var(--pr);color:#fff;font-size:16px;font-weight:600}
+.hint{font-size:12px;color:var(--mu);margin:6px 2px}
+.msg{font-size:14px;min-height:20px;margin:4px 2px;font-weight:600}
+.sum{display:flex;gap:6px;margin:8px 0}
+.sum div{flex:1;text-align:center;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px 2px;font-size:12px;color:var(--mu)}
+.sum b{display:block;font-size:18px;color:var(--tx)}
+.list{background:var(--card);border:1px solid var(--bd);border-radius:14px}
+.row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--bd)}
+.row:last-child{border:none}
+.no{width:30px;height:30px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none}
+.nm{flex:1;font-size:16px}
+.cnt{font-size:12px;color:var(--mu);margin-top:2px;font-weight:400}
+.cnt b{font-weight:700}
+.st{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--bg);color:var(--mu)}
+.st.h{background:rgba(22,163,74,.15);color:var(--ok)}
+.st.i{background:rgba(217,119,6,.15);color:var(--iz)}
+.st.a{background:rgba(220,38,38,.15);color:var(--al)}
+.bar{display:flex;gap:8px;margin:10px 0}
+.bar input{font-size:14px;padding:10px}
+.bar button{padding:10px 12px;font-size:13px;background:var(--card);color:var(--tx);border:1px solid var(--bd);white-space:nowrap}
+.sum div[onclick]{cursor:pointer}
+.acts{display:flex;gap:6px;flex:none}
+.ab{padding:0;width:38px;height:38px;border-radius:10px;background:var(--bg);color:var(--mu);border:1px solid var(--bd);font-size:14px}
+.ab.h.on{background:var(--ok);color:#fff;border-color:var(--ok)}
+.ab.i.on{background:var(--iz);color:#fff;border-color:var(--iz)}
+.ab.a.on{background:var(--al);color:#fff;border-color:var(--al)}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.sh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.sh button{padding:8px 14px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>📋 Absensi 8 Digital</h1>
+    <div class="msg" id="msg"></div>
+  </div>
+  <div class="bar">
+    <input type="date" id="dt">
+    <button onclick="pdfRekap()">📄 PDF</button><button onclick="copyRekap()">Salin</button>
+    <button onclick="resetDay()">Reset</button>
+  </div>
+  <div class="sum" id="sum"></div>
+  <div class="hint" style="margin:-2px 2px 8px">Ketuk kotak Hadir / Izin / Absen / Belum untuk melihat daftar nama</div>
+  <input id="q" placeholder="🔍 Cari nomor atau nama (contoh: 22)" autocomplete="off" oninput="render()" style="margin-bottom:8px">
+  <div class="list" id="list"></div>
+  <div id="modal" class="modal" onclick="if(event.target===this)this.style.display='none'"><div class="sheet"><div class="sh"><b id="mt"></b><button onclick="document.getElementById('modal').style.display='none'">Tutup</button></div><div id="mb" class="list" style="max-height:60vh;overflow:auto"></div></div></div>
+</div>
+<script>
+const NAMES=["Aditya Alvaro","Adriel Fidel Thimothy","Alya Afiqah","Alif Firmansyah","Annisa Zahra","Anugrah Bintang Prayuga","Aqila Saputri","Athalita Ashar","Batuta Dinejad","Citra Aprianingsih","Christofel Ebenezer Saragih","Deyfa Thalita Tri Zafirah","Farah Ghaida Pardede","Farhan Ardiansyah Amrin","Friska Panda Winata","Gayatri Tungga Dewi","Khalilah Thalita Sakhi","Kirana Zifa","Kramel Amiel Hasxian","Mauera Jelita","Melsya Khairunisa","Michelle Natania Siahaan","M. Daffa Atallah Kusnawan","Najla Khairani","Philip Marvel Siregar","Qory Al Hafiz Pohan","Raditya Axka Suwarto","Reycha Salsabila Sebayang","Sabitah Atha Azzahra","Ulfah Fauziah Hendri","Zaskia Cantika Putri","Zaneta Adelia Saragih"];
+const K='absen_kelas_v1',LB={h:'Hadir',i:'Izin',a:'Absen'};
+let D={};
+try{D=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){}
+// Migrasi nomor lama (urut abjad nama panggilan) -> nomor baru (sesuai buku daftar)
+try{if(!localStorage.getItem(K+'_m2')){const M=[1,2,4,3,5,7,8,27,9,11,10,23,12,13,14,15,16,17,19,20,21,22,24,25,26,28,29,30,6,32,31,18];const R={};for(const dt in D){R[dt]={};for(const k in D[dt]){if(M[k-1])R[dt][M[k-1]]=D[dt][k]}}D=R;localStorage.setItem(K,JSON.stringify(D));localStorage.setItem(K+'_m2','1')}}catch(e){}
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const t0=new Date();
+$('dt').value=t0.getFullYear()+'-'+pad(t0.getMonth()+1)+'-'+pad(t0.getDate());
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){}};
+const day=()=>D[$('dt').value]||(D[$('dt').value]={});
+function show(t,c){const m=$('msg');m.textContent=t;m.style.color=c||'var(--tx)'}
+
+function parseNums(s){
+  s=s.trim().toLowerCase();
+  if(s==='semua'||s==='all')return NAMES.map((_,i)=>i+1);
+  const out=[];
+  for(const p of s.split(/[,\s]+/).filter(Boolean)){
+    const r=p.match(/^(\d+)-(\d+)$/);
+    if(r){for(let x=+r[1];x<=+r[2];x++)out.push(x)}
+    else if(/^\d+$/.test(p))out.push(+p);
+    else return null;
+  }
+  return out;
+}
+function run(){
+  const v=$('cmd').value.trim().toLowerCase().replace(/\s+/g,'');
+  if(!v)return;
+  const m=v.match(/^([hia])\/(.+)$/);
+  if(!m){show('Format salah. Contoh: h/8','var(--al)');return}
+  const nums=parseNums(m[2].replace(/,/g,' '));
+  if(!nums||!nums.length){show('Nomor tidak valid','var(--al)');return}
+  const bad=nums.filter(n=>n<1||n>NAMES.length);
+  if(bad.length){show('Nomor '+bad.join(', ')+' tidak ada (1-'+NAMES.length+')','var(--al)');return}
+  const d=day();
+  nums.forEach(n=>d[n]=m[1]);
+  save();render();
+  show('✔ '+nums.map(n=>n+' '+NAMES[n-1]).slice(0,3).join(', ')+(nums.length>3?' +'+(nums.length-3)+' lainnya':'')+' → '+LB[m[1]],'var(--ok)');
+  $('cmd').value='';$('cmd').focus();
+}
+$('dt').addEventListener('change',render);
+
+function cycle(n){const d=day(),o=[undefined,'h','i','a'];const c=o.indexOf(d[n]);const nx=o[(c+1)%4];if(nx)d[n]=nx;else delete d[n];save();render()}
+
+function render(){
+  const d=day(),c={h:0,i:0,a:0};
+  Object.values(d).forEach(s=>c[s]++);
+  const belum=NAMES.length-c.h-c.i-c.a;
+  $('sum').innerHTML=`<div onclick="showList('h')"><b style="color:var(--ok)">${c.h}</b>Hadir</div><div onclick="showList('i')"><b style="color:var(--iz)">${c.i}</b>Izin</div><div onclick="showList('a')"><b style="color:var(--al)">${c.a}</b>Absen</div><div onclick="showList('b')"><b>${belum}</b>Belum</div><div><b>${NAMES.length}</b>Total</div>`;
+  const T=NAMES.map(()=>({h:0,i:0,a:0}));
+  Object.values(D).forEach(day=>{for(const k in day){if(T[k-1]&&T[k-1][day[k]]!==undefined)T[k-1][day[k]]++}});
+  $('list').innerHTML=NAMES.map((n,i)=>({n,i})).filter(o=>match(o.n,o.i+1)).map(o=>{const n=o.n,i=o.i;const s=d[i+1],t=T[i];return `<div class="row"><div class="no">${i+1}</div><div class="nm">${n}<div class="cnt">Hadir <b style="color:var(--ok)">${t.h}x</b> · Izin <b style="color:var(--iz)">${t.i}x</b> · Absen <b style="color:var(--al)">${t.a}x</b> · Tidak datang <b>${t.i+t.a}x</b></div></div><div class="acts">${['h','i','a'].map(k=>`<button class="ab ${k} ${s===k?'on':''}" onclick="setS(${i+1},'${k}')">${k.toUpperCase()}</button>`).join('')}</div></div>`}).join('')||'<div class="hint" style="padding:14px">Tidak ditemukan.</div>';
+}
+function match(n,no){const q=($('q').value||'').trim().toLowerCase();if(!q)return true;if(/^[0-9]+$/.test(q))return String(no)===q;return n.toLowerCase().includes(q)}
+function setS(no,k){const d=day();if(d[no]===k)delete d[no];else d[no]=k;save();render()}
+function showList(k){
+  const d=day();
+  const L=NAMES.map((n,i)=>({n:n,no:i+1,s:d[i+1]})).filter(x=>k==='b'?!x.s:x.s===k);
+  const T={h:'Hadir',i:'Izin',a:'Absen',b:'Belum diabsen'};
+  $('mt').textContent=T[k]+' ('+L.length+' siswa) - '+$('dt').value;
+  $('mb').innerHTML=L.length?L.map(x=>'<div class="row"><div class="no">'+x.no+'</div><div class="nm">'+x.n+'</div></div>').join(''):'<div class="hint" style="padding:14px">Belum ada siswa.</div>';
+  $('modal').style.display='flex';
+}
+function copyRekap(){
+  const d=day();
+  const g=k=>NAMES.map((n,i)=>d[i+1]===k?n:null).filter(Boolean);
+  const belum=NAMES.filter((n,i)=>!d[i+1]);
+  const t=`Rekap absen ${$('dt').value}\nHadir (${g('h').length}): ${g('h').join(', ')||'-'}\nIzin (${g('i').length}): ${g('i').join(', ')||'-'}\nAbsen (${g('a').length}): ${g('a').join(', ')||'-'}\nBelum diabsen (${belum.length}): ${belum.join(', ')||'-'}`;
+  const ok=()=>show('Rekap tersalin','var(--ok)');
+  if(navigator.clipboard)navigator.clipboard.writeText(t).then(ok,()=>prompt('Salin rekap:',t));else prompt('Salin rekap:',t);
+}
+
+function buildPDF(L){
+  const H=842,M=50,pages=[];let cur=[],y=H-M;
+  const esc=t=>String(t).replace(/[^\x20-\x7e]/g,'?').replace(/([()\\])/g,'\\$1');
+  for(const l of L){const lh=l.s*1.55;if(y-lh<M){pages.push(cur);cur=[];y=H-M}y-=lh;cur.push('BT /'+(l.b?'F2':'F1')+' '+l.s+' Tf '+(M+(l.x||0))+' '+y.toFixed(1)+' Td ('+esc(l.t)+') Tj ET')}
+  pages.push(cur);
+  const o=[];o[1]='<< /Type /Catalog /Pages 2 0 R >>';
+  o[2]='<< /Type /Pages /Kids ['+pages.map((_,i)=>(5+2*i)+' 0 R').join(' ')+'] /Count '+pages.length+' >>';
+  o[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+  o[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+  pages.forEach((c,i)=>{const cs=c.join('\n');o[5+2*i]='<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents '+(6+2*i)+' 0 R >>';o[6+2*i]='<< /Length '+cs.length+' >>\nstream\n'+cs+'\nendstream'});
+  let out='%PDF-1.4\n';const off=[];
+  for(let i=1;i<o.length;i++){off[i]=out.length;out+=i+' 0 obj\n'+o[i]+'\nendobj\n'}
+  const xr=out.length;
+  out+='xref\n0 '+o.length+'\n0000000000 65535 f \n'+off.slice(1).map(n=>String(n).padStart(10,'0')+' 00000 n ').join('\n')+'\ntrailer\n<< /Size '+o.length+' /Root 1 0 R >>\nstartxref\n'+xr+'\n%%EOF';
+  const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;
+  return u;
+}
+function pdfRekap(){
+  const d=day(),dv=$('dt').value,p=dv.split('-');
+  const tgl=new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const grp=k=>NAMES.map((n,i)=>({n,no:i+1,s:d[i+1]})).filter(x=>k==='b'?!x.s:x.s===k);
+  const L=[{t:'Rekap Absensi Kelas 8 Digital',s:18,b:1},{t:tgl,s:12},{t:' ',s:8}];
+  [['h','Hadir'],['i','Izin'],['a','Absen'],['b','Belum diabsen']].forEach(([k,lb])=>{
+    const g=grp(k);L.push({t:lb+' ('+g.length+')',s:13,b:1});
+    if(!g.length)L.push({t:'-',s:11,x:12});
+    g.forEach(x=>L.push({t:x.no+'. '+x.n,s:11,x:12}));
+    L.push({t:' ',s:6});
+  });
+  const pdfBytes=buildPDF(L);
+  const filename='Rekap_Absen_'+dv+'.pdf';
+  if(window.Android && typeof Android.savePdf==='function'){
+    let binary='';
+    const chunk=0x8000;
+    for(let i=0;i<pdfBytes.length;i+=chunk){
+      binary+=String.fromCharCode.apply(null,pdfBytes.subarray(i,Math.min(i+chunk,pdfBytes.length)));
+    }
+    Android.savePdf(btoa(binary),filename);
+    show('✔ PDF rekap disimpan','var(--ok)');
+  }else{
+    const blob=new Blob([pdfBytes],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),15000);
+    show('✔ PDF rekap dibuat','var(--ok)');
+  }
+}
+function resetDay(){if(confirm('Hapus absen tanggal ini?')){delete D[$('dt').value];save();render();show('Direset')}}
+render();
+</script>
+</body>
+</html>
